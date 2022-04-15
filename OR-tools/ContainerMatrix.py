@@ -69,3 +69,17 @@ class ContainerMatrix:
                         print(f"{solver.Value(v)} ", end="")
                     print("| ", end="")
                 print()
+
+        print("=" * (((self.s + 1) * 2) * self.t - 1))
+        for height in reversed(range(self.h)):
+            for time in range(self.t):
+                for stack in range(self.s):
+                    v_range = self.get_range(time, None, stack, height, no_dimensions=False)
+                    for v in v_range:
+                        if solver.Value(v[4]) != 0:
+                            print(chr(65 + v[1]) + " ", end="")
+                            break
+                    else:
+                        print("0 ", end="")
+                print("| ", end="")
+            print()
