@@ -68,6 +68,31 @@ class ContainerMatrix:
         else:
             return sorted_result
     
+    def decision_get_range(self, t : Union[int, None], m : Union[int, None], s : Union[int, None], h : Union[int, None], no_dimensions = True) -> Union[List[Tuple[int, int, int, int, cp_model.CpModel]], List[cp_model.CpModel]]:
+        self.validate_query_dimensions(t, None, s, h)
+        assert m in ("in", "out")
+
+        result = []
+
+        for key, variable in self.decision_variables.items():
+            skip = False
+            for dimension, index in zip([t, m, s, h], [0, 1, 2, 3]):
+                if dimension != None and dimension != key[index]:
+                    skip = True
+            if skip:
+                continue
+
+            result.append(
+                (*key, variable)
+            )
+        
+        sorted_result = list(sorted(result))
+
+        if no_dimensions:
+            return [e[4] for e in sorted_result]
+        else:
+            return sorted_result
+    
     def validate_query_dimensions(self, t : Union[int, None], c : Union[int, None], s : Union[int, None], h : Union[int, None]):
         for query, dimension in zip([t, c, s, h], [self.t, self.c, self.s, self.h]):
             if query != None:
