@@ -80,6 +80,6 @@ class ContainerMatrix:
                             print(chr(65 + v[1]) + " ", end="")
                             break
                     else:
-                        print("0 ", end="")
+                        print(". ", end="")
                 print("| ", end="")
             print()
