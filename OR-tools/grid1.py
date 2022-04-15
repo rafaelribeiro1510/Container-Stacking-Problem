@@ -12,6 +12,14 @@ def c2(model, matrix):
             for h in range(matrix.h):
                 model.Add(sum(matrix.get_range(t, None, s, h), 0) <= 1)
 
+def c3(model, matrix):
+    for t in range(matrix.t):
+        for s in range(matrix.s):
+            for h in range(matrix.h):
+                if h == 0:
+                    continue
+                model.Add(sum(matrix.get_range(t, None, s, h), 0) <= sum(matrix.get_range(t, None, s, h - 1), 0))
+
 def main(time : int, container : int, length : int, height : int):
     model = cp_model.CpModel()
 
@@ -19,6 +27,7 @@ def main(time : int, container : int, length : int, height : int):
 
     c1(model, matrix)
     c2(model, matrix)
+    c3(model, matrix)
 
     solver = cp_model.CpSolver()
     status = solver.Solve(model)
