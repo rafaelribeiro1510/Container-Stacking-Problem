@@ -68,7 +68,7 @@ class ContainerMatrix:
                         v = self.get(time, container, stack, height)
                         print(f"{solver.Value(v)} ", end="")
                     print("| ", end="")
-                print()
+                print(chr(65 + container))
 
         print("=" * (((self.s + 1) * 2) * self.t - 1))
         for height in reversed(range(self.h)):
