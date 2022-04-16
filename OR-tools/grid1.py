@@ -4,7 +4,7 @@ from ortools.sat.python import cp_model
 def c1(model : cp_model.CpModel, matrix : ContainerMatrix):
     for t in range(matrix.t):
         for c in range(matrix.c):
-            model.Add(sum(matrix.get_range(t, c, None, None), 0) == 1)
+            model.Add(sum(matrix.get_range(t, c, None, None), 0) == matrix.lifetime[t][c])
 
 def c2(model : cp_model.CpModel, matrix : ContainerMatrix):
     for t in range(matrix.t):
@@ -43,6 +43,55 @@ def c6(model : cp_model.CpModel, matrix : ContainerMatrix):
 
         model.Add(o == 0).OnlyEnforceIf(b)
 
+def c7(model : cp_model.CpModel, matrix : ContainerMatrix):
+    for t in range(matrix.t - 1):
+        for s in range(matrix.s):
+            for h in range(matrix.h):
+                b = model.NewBoolVar('b')
+                out = matrix.decision_get(t, "out", s, h)
+                model.Add(out == 1).OnlyEnforceIf(b)
+                model.Add(out == 0).OnlyEnforceIf(b.Not())
+
+                model.Add(sum(matrix.get_range(t, None, s, h)) == out).OnlyEnforceIf(b)
+
+def c8(model : cp_model.CpModel, matrix : ContainerMatrix):
+    model.Add(sum(matrix.lifetime[0]) == matrix.c)
+
+def c9(model : cp_model.CpModel, matrix : ContainerMatrix):
+    for t in range(matrix.t - 1):
+        model.Add(sum(matrix.lifetime[t]) == sum(matrix.lifetime[t + 1]) + matrix.remove[t])
+
+def c10(model : cp_model.CpModel, matrix : ContainerMatrix):
+    for t in range(matrix.t - 1):
+        for c in range(matrix.c):
+            model.Add(matrix.lifetime[t][c] >= matrix.lifetime[t + 1][c])
+
+def c11(model : cp_model.CpModel, matrix : ContainerMatrix):
+    for t in range(matrix.t - 1):
+        for c in range(matrix.c):
+            for s in range(matrix.s):
+                for h in range(matrix.h):
+                    b = model.NewBoolVar('b')
+                    model.Add(matrix.idle[t] == 1).OnlyEnforceIf(b)
+                    model.Add(matrix.idle[t] == 0).OnlyEnforceIf(b.Not())
+
+                    model.Add(matrix.get(t, c, s, h) == matrix.get(t + 1, c, s, h)).OnlyEnforceIf(b)
+
+def c12(model : cp_model.CpModel, matrix : ContainerMatrix):
+    for t in range(matrix.t - 1):
+        for c in range(matrix.c):
+            for s in range(matrix.s):
+                for h in range(matrix.h):
+                    b = model.NewBoolVar('b')
+                    model.Add(matrix.remove[t] == 1).OnlyEnforceIf(b)
+                    model.Add(matrix.remove[t] == 0).OnlyEnforceIf(b.Not())
+
+                    b1 = model.NewBoolVar('b1')
+                    model.Add(matrix.decision_get(t, "out", s, h) == 1).OnlyEnforceIf(b1)
+                    model.Add(matrix.decision_get(t, "out", s, h) == 0).OnlyEnforceIf(b1.Not())
+
+                    model.Add(matrix.get(t, c, s, h) == matrix.get(t + 1, c, s, h)).OnlyEnforceIf(b, b1.Not())
+
 def main(time : int, container : int, length : int, height : int):
     model = cp_model.CpModel()
 
@@ -54,6 +103,14 @@ def main(time : int, container : int, length : int, height : int):
     c4(model, matrix)
     c5(model, matrix)
     c6(model, matrix)
+    c7(model, matrix)
+    c8(model, matrix)
+    c9(model, matrix)
+    c10(model, matrix)
+    c11(model, matrix)
+    c12(model, matrix)
+
+    model.Add(sum(matrix.remove) == 3)
 
     solver = cp_model.CpSolver()
     status = solver.Solve(model)
