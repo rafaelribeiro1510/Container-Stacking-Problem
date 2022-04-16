@@ -70,7 +70,7 @@ class ContainerMatrix:
     
     def decision_get_range(self, t : Union[int, None], m : Union[int, None], s : Union[int, None], h : Union[int, None], no_dimensions = True) -> Union[List[Tuple[int, int, int, int, cp_model.CpModel]], List[cp_model.CpModel]]:
         self.validate_query_dimensions(t, None, s, h)
-        assert m in ("in", "out")
+        assert m in (None, "in", "out")
 
         result = []
 
@@ -147,6 +147,20 @@ class ContainerMatrix:
                         print(f"{solver.Value(v)} ", end="")
                     print("| ", end="")
                 print(" " + movement)
+    
+    def print_condensed_decisions(self, solver : cp_model.CpSolver):
+        for height in reversed(range(self.h)):
+            for time in range(self.t - 1):
+                for stack in range(self.s):
+                    v_range = self.decision_get_range(time, None, stack, height, no_dimensions=False)
+                    for v in v_range:
+                        if solver.Value(v[4]) != 0:
+                            print("O " if v[1] == "out" else "I ", end="")
+                            break
+                    else:
+                        print(". ", end="")
+                print("| ", end="")
+            print()
 
     def print_solution(self, solver : cp_model.CpSolver):
         # self.print_guidance()
@@ -158,3 +172,6 @@ class ContainerMatrix:
         
         # pprint(self.decision_variables)
         self.print_decisions(solver)
+        decision_spacer = (((self.s + 1) * 2) * (self.t - 1) - 1)
+        print("=" * decision_spacer)
+        self.print_condensed_decisions(solver)
