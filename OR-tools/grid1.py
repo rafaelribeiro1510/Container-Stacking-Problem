@@ -92,6 +92,56 @@ def c12(model : cp_model.CpModel, matrix : ContainerMatrix):
 
                     model.Add(matrix.get(t, c, s, h) == matrix.get(t + 1, c, s, h)).OnlyEnforceIf(b, b1.Not())
 
+def c13(model : cp_model.CpModel, matrix : ContainerMatrix):
+    for t in range(matrix.t - 1):
+        for c in range(matrix.c):
+            for s in range(matrix.s):
+                for h in range(matrix.h):
+                    b = model.NewBoolVar('b')
+                    model.Add(matrix.emplace[t] == 1).OnlyEnforceIf(b)
+                    model.Add(matrix.emplace[t] == 0).OnlyEnforceIf(b.Not())
+
+                    b1 = model.NewBoolVar('b1')
+                    model.Add(matrix.get(t, c, s, h) == 1).OnlyEnforceIf(b1)
+                    model.Add(matrix.get(t, c, s, h) == 0).OnlyEnforceIf(b1.Not())
+
+                    b2 = model.NewBoolVar('b2')
+                    model.Add(matrix.decision_get(t, "in", s, h) == 1).OnlyEnforceIf(b2)
+                    model.Add(matrix.decision_get(t, "in", s, h) == 0).OnlyEnforceIf(b2.Not())
+
+                    model.Add(matrix.get(t + 1, c, s, h) == 0).OnlyEnforceIf(b, b1.Not(), b2.Not())
+
+def c14(model : cp_model.CpModel, matrix : ContainerMatrix):
+    for t in range(matrix.t - 1):
+        for s in range(matrix.s):
+            for h in range(matrix.h):
+                b = model.NewBoolVar('b')
+                model.Add(matrix.emplace[t] == 1).OnlyEnforceIf(b)
+                model.Add(matrix.emplace[t] == 0).OnlyEnforceIf(b.Not())
+
+                b1 = model.NewBoolVar('b1')
+                model.Add(matrix.decision_get(t, "in", s, h) == 1).OnlyEnforceIf(b1)
+                model.Add(matrix.decision_get(t, "in", s, h) == 0).OnlyEnforceIf(b1.Not())
+
+                model.Add(sum(matrix.get_range(t, None, s, h))     == 0).OnlyEnforceIf(b, b1)
+                model.Add(sum(matrix.get_range(t + 1, None, s, h)) == 1).OnlyEnforceIf(b, b1)
+
+def c15(model : cp_model.CpModel, matrix : ContainerMatrix):
+    for t in range(matrix.t - 1):
+        for s in range(matrix.s):
+            for h in range(matrix.h):
+                b = model.NewBoolVar('b')
+                model.Add(matrix.emplace[t] == 1).OnlyEnforceIf(b)
+                model.Add(matrix.emplace[t] == 0).OnlyEnforceIf(b.Not())
+
+                b1 = model.NewBoolVar('b1')
+                model.Add(matrix.decision_get(t, "out", s, h) == 1).OnlyEnforceIf(b1)
+                model.Add(matrix.decision_get(t, "out", s, h) == 0).OnlyEnforceIf(b1.Not())
+
+                model.Add(sum(matrix.get_range(t, None, s, h))     == 1).OnlyEnforceIf(b, b1)
+                model.Add(sum(matrix.get_range(t + 1, None, s, h)) == 0).OnlyEnforceIf(b, b1)
+
+
 def main(time : int, container : int, length : int, height : int):
     model = cp_model.CpModel()
 
@@ -109,8 +159,11 @@ def main(time : int, container : int, length : int, height : int):
     c10(model, matrix)
     c11(model, matrix)
     c12(model, matrix)
+    c13(model, matrix)
+    c14(model, matrix)
+    c15(model, matrix)
 
-    model.Add(sum(matrix.remove) == 3)
+    model.Add(sum(matrix.emplace) == 6) # This is just here for debug
 
     solver = cp_model.CpSolver()
     status = solver.Solve(model)
@@ -120,4 +173,4 @@ def main(time : int, container : int, length : int, height : int):
         matrix.print_solution(solver)
 
 if __name__ == '__main__':
-    main(4, 4, 4, 3)
+    main(10, 4, 4, 3)
