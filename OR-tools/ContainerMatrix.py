@@ -17,6 +17,16 @@ class ContainerMatrix:
                     for height in range(h):
                         identifier = f"t{time}c{container}s{stack}h{height}"
                         self.variables[(time, container, stack, height)] = model.NewIntVar(0, 1, identifier)
+
+        self.lifetime = []
+
+        for time in range(t):
+            temp = []
+            for container in range(c):
+                temp.append(
+                    model.NewIntVar(0, 1, "l")
+                )
+            self.lifetime.append(temp)
         
         self.idle = []
         self.remove = []
@@ -157,6 +167,13 @@ class ContainerMatrix:
                 print("| ", end="")
             print()
 
+    def print_lifetimes(self, solver : cp_model.CpSolver):
+        print("LIFETIMES:")
+        t = zip(*self.lifetime)
+
+        for i, v in enumerate(t):
+            print(f"{chr(65 + i)}: {[solver.Value(e) for e in v]}")
+
     def print_solution(self, solver : cp_model.CpSolver, detail : bool = False):
         # self.print_guidance()
         if detail:
@@ -166,6 +183,8 @@ class ContainerMatrix:
         self.print_condensed_grid(solver)
         print("=" * spacer)
         
+        self.print_lifetimes(solver)
+
         # pprint(self.decision_variables)
         print("DECISION VARIABLES")
         print(f"Emplace: {[solver.Value(e) for e in self.emplace]}")
