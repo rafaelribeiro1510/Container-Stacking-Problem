@@ -133,11 +133,6 @@ class ContainerMatrix:
             print()
 
     def print_decisions(self, solver : cp_model.CpSolver):
-        print("DECISION VARIABLES")
-        print(f"Emplace: {[solver.Value(e) for e in self.emplace]}")
-        print(f"Idle:    {[solver.Value(e) for e in self.idle]}")
-        print(f"Remove:  {[solver.Value(e) for e in self.remove]}")
-
         for movement in ("in", "out"):
             print()
             for height in reversed(range(self.h)):
@@ -162,16 +157,24 @@ class ContainerMatrix:
                 print("| ", end="")
             print()
 
-    def print_solution(self, solver : cp_model.CpSolver):
+    def print_solution(self, solver : cp_model.CpSolver, detail : bool = False):
         # self.print_guidance()
-        self.print_binary_grid(solver)
+        if detail:
+            self.print_binary_grid(solver)
         spacer = (((self.s + 1) * 2) * self.t - 1)
         print("=" * spacer)
         self.print_condensed_grid(solver)
         print("=" * spacer)
         
         # pprint(self.decision_variables)
-        self.print_decisions(solver)
+        print("DECISION VARIABLES")
+        print(f"Emplace: {[solver.Value(e) for e in self.emplace]}")
+        print(f"Idle:    {[solver.Value(e) for e in self.idle]}")
+        print(f"Remove:  {[solver.Value(e) for e in self.remove]}")
+
+        if detail:
+            self.print_decisions(solver)
         decision_spacer = (((self.s + 1) * 2) * (self.t - 1) - 1)
         print("=" * decision_spacer)
         self.print_condensed_decisions(solver)
+        print("=" * decision_spacer)
