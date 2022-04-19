@@ -1,17 +1,20 @@
 from ContainerMatrix import ContainerMatrix
 from ortools.sat.python import cp_model
 
+# Sum of each box is equal to that containers lifetime, at each given t
 def c1(model : cp_model.CpModel, matrix : ContainerMatrix):
     for t in range(matrix.t):
         for c in range(matrix.c):
             model.Add(sum(matrix.get_range(t, c, None, None), 0) == matrix.lifetime[t][c])
 
+# No two containers can exist in the same place, at each given t
 def c2(model : cp_model.CpModel, matrix : ContainerMatrix):
     for t in range(matrix.t):
         for s in range(matrix.s):
             for h in range(matrix.h):
                 model.Add(sum(matrix.get_range(t, None, s, h), 0) <= 1)
 
+# Sum of top part of stack must be lower or equal to sum of bottom part. Forbids floating containers
 def c3(model : cp_model.CpModel, matrix : ContainerMatrix):
     for t in range(matrix.t):
         for s in range(matrix.s):
@@ -20,15 +23,18 @@ def c3(model : cp_model.CpModel, matrix : ContainerMatrix):
                     continue
                 model.Add(sum(matrix.get_range(t, None, s, h), 0) <= sum(matrix.get_range(t, None, s, h - 1), 0))
 
+# For each time t, only one action can be chosen
 def c4(model : cp_model.CpModel, matrix : ContainerMatrix):
     for trio in zip(matrix.emplace, matrix.idle, matrix.remove):
         model.Add(sum(trio) == 1)
 
+# Restricts whether 'in' or 'out' can exist in the decision grids, based on the action that was chosen, at each time t
 def c5(model : cp_model.CpModel, matrix : ContainerMatrix):
     for t in range(matrix.t - 1):
         model.Add(sum(matrix.decision_get_range(t, "in",  None, None), 0) == matrix.emplace[t])
         model.Add(sum(matrix.decision_get_range(t, "out", None, None), 0) == 1 - matrix.idle[t])
-        
+
+# For each time t, there cannot be both 'in' and 'out' on the same position
 def c6(model : cp_model.CpModel, matrix : ContainerMatrix):
     ins = matrix.decision_get_range(None, "in",  None, None)
     outs = matrix.decision_get_range(None, "out",  None, None)
@@ -43,6 +49,7 @@ def c6(model : cp_model.CpModel, matrix : ContainerMatrix):
 
         model.Add(o == 0).OnlyEnforceIf(b)
 
+# An 'out' must be put on a place where a container exists, on a given time t
 def c7(model : cp_model.CpModel, matrix : ContainerMatrix):
     for t in range(matrix.t - 1):
         for s in range(matrix.s):
@@ -54,18 +61,22 @@ def c7(model : cp_model.CpModel, matrix : ContainerMatrix):
 
                 model.Add(sum(matrix.get_range(t, None, s, h)) == out).OnlyEnforceIf(b)
 
+# At the start, all containers are 'alive'
 def c8(model : cp_model.CpModel, matrix : ContainerMatrix):
     model.Add(sum(matrix.lifetime[0]) == matrix.c)
 
+# When a 'remove' action is chosen, the number of 'live' containers is reduced by one (1)
 def c9(model : cp_model.CpModel, matrix : ContainerMatrix):
     for t in range(matrix.t - 1):
         model.Add(sum(matrix.lifetime[t]) == sum(matrix.lifetime[t + 1]) + matrix.remove[t])
 
+# When a container stops existing, it won't reappear
 def c10(model : cp_model.CpModel, matrix : ContainerMatrix):
     for t in range(matrix.t - 1):
         for c in range(matrix.c):
             model.Add(matrix.lifetime[t][c] >= matrix.lifetime[t + 1][c])
 
+# If the action 'idle' is chosen, everything stays the same
 def c11(model : cp_model.CpModel, matrix : ContainerMatrix):
     for t in range(matrix.t - 1):
         for c in range(matrix.c):
@@ -77,6 +88,7 @@ def c11(model : cp_model.CpModel, matrix : ContainerMatrix):
 
                     model.Add(matrix.get(t, c, s, h) == matrix.get(t + 1, c, s, h)).OnlyEnforceIf(b)
 
+# If the action 'remove' is chosen, everything stays the same, except for the place marked with an 'out' in the decision grid
 def c12(model : cp_model.CpModel, matrix : ContainerMatrix):
     for t in range(matrix.t - 1):
         for c in range(matrix.c):
@@ -92,6 +104,7 @@ def c12(model : cp_model.CpModel, matrix : ContainerMatrix):
 
                     model.Add(matrix.get(t, c, s, h) == matrix.get(t + 1, c, s, h)).OnlyEnforceIf(b, b1.Not())
 
+# If the action 'emplace' is chosen, if a place has no container and there is no 'in' for that place, it will remain with no containers
 def c13(model : cp_model.CpModel, matrix : ContainerMatrix):
     for t in range(matrix.t - 1):
         for c in range(matrix.c):
@@ -111,6 +124,7 @@ def c13(model : cp_model.CpModel, matrix : ContainerMatrix):
 
                     model.Add(matrix.get(t + 1, c, s, h) == 0).OnlyEnforceIf(b, b1.Not(), b2.Not())
 
+# If the action 'emplace' is chosen and there is an 'in' in a place, then in the next timestamp, there will be a container in that place
 def c14(model : cp_model.CpModel, matrix : ContainerMatrix):
     for t in range(matrix.t - 1):
         for s in range(matrix.s):
@@ -126,6 +140,7 @@ def c14(model : cp_model.CpModel, matrix : ContainerMatrix):
                 model.Add(sum(matrix.get_range(t, None, s, h))     == 0).OnlyEnforceIf(b, b1)
                 model.Add(sum(matrix.get_range(t + 1, None, s, h)) == 1).OnlyEnforceIf(b, b1)
 
+# If the action 'emplace' is chosen and there is an 'out' in a place, then in the next timestamp, there will be no container in that place
 def c15(model : cp_model.CpModel, matrix : ContainerMatrix):
     for t in range(matrix.t - 1):
         for s in range(matrix.s):
@@ -147,21 +162,9 @@ def main(time : int, container : int, length : int, height : int):
 
     matrix = ContainerMatrix(model, time, container, length, height)
 
-    c1(model, matrix)
-    c2(model, matrix)
-    c3(model, matrix)
-    c4(model, matrix)
-    c5(model, matrix)
-    c6(model, matrix)
-    c7(model, matrix)
-    c8(model, matrix)
-    c9(model, matrix)
-    c10(model, matrix)
-    c11(model, matrix)
-    c12(model, matrix)
-    c13(model, matrix)
-    c14(model, matrix)
-    c15(model, matrix)
+    constraints = [c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12, c13, c14, c15]
+    for constraint in constraints: 
+        constraint(model, matrix)
 
     model.Add(sum(matrix.emplace) == 6) # This is just here for debug
 
