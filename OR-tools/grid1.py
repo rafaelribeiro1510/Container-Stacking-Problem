@@ -1,3 +1,5 @@
+import json
+from typing import Optional, Union
 from ContainerMatrix import ContainerMatrix
 from ortools.sat.python import cp_model
 
@@ -156,6 +158,32 @@ def c15(model : cp_model.CpModel, matrix : ContainerMatrix):
                 model.Add(sum(matrix.get_range(t, None, s, h))     == 1).OnlyEnforceIf(b, b1)
                 model.Add(sum(matrix.get_range(t + 1, None, s, h)) == 0).OnlyEnforceIf(b, b1)
 
+def load_from_json(json_path : str):
+    with open(json_path) as f:
+        data = json.load(f)
+
+    time, length, height = data["dimensions"]
+    n_containers = len(data["containers"])
+
+    index_lookup = {label : index for index, label in enumerate(i[0] for i in data["containers"])}
+    label_lookup = [i[0] for i in data["containers"]]
+
+    model = cp_model.CpModel()
+    matrix = ContainerMatrix(model, time, n_containers, length, height)
+
+    constraints = [c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12, c13, c14, c15]
+    for constraint in constraints: 
+        constraint(model, matrix)
+    
+    # Setting the initial container positions
+    for container, (label, stack, height) in enumerate(data["containers"]):
+        model.Add(matrix.get(0, container, stack, height) == 1)
+    
+    solver = cp_model.CpSolver()
+    status = solver.Solve(model)
+
+    if status == cp_model.OPTIMAL or status == cp_model.FEASIBLE:
+        matrix.print_solution(solver, labels=label_lookup)
 
 def main(time : int, container : int, length : int, height : int):
     model = cp_model.CpModel()
@@ -172,8 +200,8 @@ def main(time : int, container : int, length : int, height : int):
     status = solver.Solve(model)
 
     if status == cp_model.OPTIMAL or status == cp_model.FEASIBLE:
-
         matrix.print_solution(solver)
 
 if __name__ == '__main__':
-    main(10, 4, 4, 3)
+    # main(10, 4, 4, 3)
+    load_from_json("input.json")

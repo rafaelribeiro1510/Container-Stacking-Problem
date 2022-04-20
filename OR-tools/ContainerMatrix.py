@@ -1,3 +1,4 @@
+import string
 from ortools.sat.python import cp_model
 from typing import Tuple, List, Union
 from pprint import pprint
@@ -128,14 +129,14 @@ class ContainerMatrix:
                     print("| ", end="")
                 print(chr(65 + container))
     
-    def print_condensed_grid(self, solver : cp_model.CpSolver):
+    def print_condensed_grid(self, solver : cp_model.CpSolver, labels : List[str]):
         for height in reversed(range(self.h)):
             for time in range(self.t):
                 for stack in range(self.s):
                     v_range = self.get_range(time, None, stack, height, no_dimensions=False)
                     for v in v_range:
                         if solver.Value(v[4]) != 0:
-                            print(chr(65 + v[1]) + " ", end="")
+                            print(labels[v[1]] + " ", end="")
                             break
                     else:
                         print(". ", end="")
@@ -167,23 +168,27 @@ class ContainerMatrix:
                 print("| ", end="")
             print()
 
-    def print_lifetimes(self, solver : cp_model.CpSolver):
+    def print_lifetimes(self, solver : cp_model.CpSolver, labels : List[str]):
         print("LIFETIMES:")
         t = zip(*self.lifetime)
 
         for i, v in enumerate(t):
-            print(f"{chr(65 + i)}: {[solver.Value(e) for e in v]}")
+            print(f"{labels[i]}: {[solver.Value(e) for e in v]}")
 
-    def print_solution(self, solver : cp_model.CpSolver, detail : bool = False):
+    def print_solution(self, solver : cp_model.CpSolver, detail : bool = False, labels : Union[List[str], str] = None):
         # self.print_guidance()
         if detail:
             self.print_binary_grid(solver)
+        
+        if labels == None:
+            labels = list(string.ascii_uppercase)[:self.c]
+
         spacer = (((self.s + 1) * 2) * self.t - 1)
         print("=" * spacer)
-        self.print_condensed_grid(solver)
+        self.print_condensed_grid(solver, labels)
         print("=" * spacer)
         
-        self.print_lifetimes(solver)
+        self.print_lifetimes(solver, labels)
 
         # pprint(self.decision_variables)
         print("DECISION VARIABLES")
