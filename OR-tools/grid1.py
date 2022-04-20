@@ -158,6 +158,11 @@ def c15(model : cp_model.CpModel, matrix : ContainerMatrix):
                 model.Add(sum(matrix.get_range(t, None, s, h))     == 1).OnlyEnforceIf(b, b1)
                 model.Add(sum(matrix.get_range(t + 1, None, s, h)) == 0).OnlyEnforceIf(b, b1)
 
+# This one is purely cosmetic
+def put_idles_at_the_end(model : cp_model.CpModel, matrix : ContainerMatrix):
+    for t in range(len(matrix.idle) - 1):
+        model.Add(matrix.idle[t] <= matrix.idle[t + 1])
+
 def load_from_json(json_path : str):
     with open(json_path) as f:
         data = json.load(f)
@@ -171,7 +176,7 @@ def load_from_json(json_path : str):
     model = cp_model.CpModel()
     matrix = ContainerMatrix(model, time, n_containers, length, height)
 
-    constraints = [c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12, c13, c14, c15]
+    constraints = [c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12, c13, c14, c15, put_idles_at_the_end]
     for constraint in constraints: 
         constraint(model, matrix)
     
