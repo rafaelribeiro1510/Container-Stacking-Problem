@@ -166,7 +166,7 @@ def load_from_json(json_path : str):
     n_containers = len(data["containers"])
 
     index_lookup = {label : index for index, label in enumerate(i[0] for i in data["containers"])}
-    label_lookup = [i[0] for i in data["containers"]]
+    labels = [i[0] for i in data["containers"]]
 
     model = cp_model.CpModel()
     matrix = ContainerMatrix(model, time, n_containers, length, height)
@@ -179,11 +179,17 @@ def load_from_json(json_path : str):
     for container, (label, stack, height) in enumerate(data["containers"]):
         model.Add(matrix.get(0, container, stack, height) == 1)
     
+    model.Maximize(sum(matrix.idle)) # By maximizing the number of idle actions, we minimize emplaces and removes
+
+    for label in labels:
+        should_exist = 0 if label in data["remove"] else 1 # If 0, the container should be removed
+        model.Add(matrix.lifetime[-1][index_lookup[label]] == should_exist)
+    
     solver = cp_model.CpSolver()
     status = solver.Solve(model)
 
     if status == cp_model.OPTIMAL or status == cp_model.FEASIBLE:
-        matrix.print_solution(solver, labels=label_lookup)
+        matrix.print_solution(solver, labels=labels)
 
 def main(time : int, container : int, length : int, height : int):
     model = cp_model.CpModel()
