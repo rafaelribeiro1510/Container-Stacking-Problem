@@ -1,10 +1,11 @@
 import string
-from ortools.sat.python import cp_model
 from typing import Tuple, List, Union
 from pprint import pprint
 
+from Model import Model
+
 class ContainerMatrix:
-    def __init__(self, model : cp_model.CpModel, t : int, c : int, s : int, h : int) -> None:
+    def __init__(self, model : Model, t : int, c : int, s : int, h : int) -> None:
         self.model = model
         self.t = t
         self.c = c
@@ -44,18 +45,18 @@ class ContainerMatrix:
                     self.decision_variables[(time, "in",  stack, height)] = model.NewIntVar(0, 1, identifier + "in")
                     self.decision_variables[(time, "out", stack, height)] = model.NewIntVar(0, 1, identifier + "out")            
     
-    def get(self, t : int, c : int, s : int, h : int) -> cp_model.CpModel:
+    def get(self, t : int, c : int, s : int, h : int) -> Model:
         self.validate_query_dimensions(t, c, s, h)
 
         return self.variables[(t, c, s, h)]
     
-    def decision_get(self, t : int, m : int, s : int, h : int) -> cp_model.CpModel:
+    def decision_get(self, t : int, m : int, s : int, h : int) -> Model:
         self.validate_query_dimensions(t, None, s, h)
         assert m in ("in", "out")
 
         return self.decision_variables[(t, m, s, h)]
     
-    def get_range(self, t : Union[int, None], c : Union[int, None], s : Union[int, None], h : Union[int, None], no_dimensions = True) -> Union[List[Tuple[int, int, int, int, cp_model.CpModel]], List[cp_model.CpModel]]:
+    def get_range(self, t : Union[int, None], c : Union[int, None], s : Union[int, None], h : Union[int, None], no_dimensions = True) -> Union[List[Tuple[int, int, int, int, Model]], List[Model]]:
         self.validate_query_dimensions(t, c, s, h)
         
         result = []
@@ -79,7 +80,7 @@ class ContainerMatrix:
         else:
             return sorted_result
     
-    def decision_get_range(self, t : Union[int, None], m : Union[int, None], s : Union[int, None], h : Union[int, None], no_dimensions = True) -> Union[List[Tuple[int, int, int, int, cp_model.CpModel]], List[cp_model.CpModel]]:
+    def decision_get_range(self, t : Union[int, None], m : Union[int, None], s : Union[int, None], h : Union[int, None], no_dimensions = True) -> Union[List[Tuple[int, int, int, int, Model]], List[Model]]:
         self.validate_query_dimensions(t, None, s, h)
         assert m in (None, "in", "out")
 
@@ -118,24 +119,24 @@ class ContainerMatrix:
            |     
            V             """)
     
-    def print_binary_grid(self, solver : cp_model.CpSolver):
+    def print_binary_grid(self, model : Model):
         for container in range(self.c):
             print()
             for height in reversed(range(self.h)):
                 for time in range(self.t):
                     for stack in range(self.s):
                         v = self.get(time, container, stack, height)
-                        print(f"{solver.Value(v)} ", end="")
+                        print(f"{model.Value(v)} ", end="")
                     print("| ", end="")
                 print(chr(65 + container))
     
-    def print_condensed_grid(self, solver : cp_model.CpSolver, labels : List[str]):
+    def print_condensed_grid(self, model : Model, labels : List[str]):
         for height in reversed(range(self.h)):
             for time in range(self.t):
                 for stack in range(self.s):
                     v_range = self.get_range(time, None, stack, height, no_dimensions=False)
                     for v in v_range:
-                        if solver.Value(v[4]) != 0:
+                        if model.Value(v[4]) != 0:
                             print(labels[v[1]] + " ", end="")
                             break
                     else:
@@ -143,24 +144,24 @@ class ContainerMatrix:
                 print("| ", end="")
             print()
 
-    def print_decisions(self, solver : cp_model.CpSolver):
+    def print_decisions(self, model : Model):
         for movement in ("in", "out"):
             print()
             for height in reversed(range(self.h)):
                 for time in range(self.t - 1):
                     for stack in range(self.s):
                         v = self.decision_get(time, movement, stack, height)
-                        print(f"{solver.Value(v)} ", end="")
+                        print(f"{model.Value(v)} ", end="")
                     print("| ", end="")
                 print(" " + movement)
     
-    def print_condensed_decisions(self, solver : cp_model.CpSolver):
+    def print_condensed_decisions(self, model : Model):
         for height in reversed(range(self.h)):
             for time in range(self.t - 1):
                 for stack in range(self.s):
                     v_range = self.decision_get_range(time, None, stack, height, no_dimensions=False)
                     for v in v_range:
-                        if solver.Value(v[4]) != 0:
+                        if model.Value(v[4]) != 0:
                             print("O " if v[1] == "out" else "I ", end="")
                             break
                     else:
@@ -168,37 +169,37 @@ class ContainerMatrix:
                 print("| ", end="")
             print()
 
-    def print_lifetimes(self, solver : cp_model.CpSolver, labels : List[str]):
+    def print_lifetimes(self, model : Model, labels : List[str]):
         print("LIFETIMES:")
         t = zip(*self.lifetime)
 
         for i, v in enumerate(t):
-            print(f"{labels[i]}: {[solver.Value(e) for e in v]}")
+            print(f"{labels[i]}: {[model.Value(e) for e in v]}")
 
-    def print_solution(self, solver : cp_model.CpSolver, detail : bool = False, labels : Union[List[str], str] = None):
+    def print_solution(self, model : Model, detail : bool = False, labels : Union[List[str], str] = None):
         # self.print_guidance()
         if detail:
-            self.print_binary_grid(solver)
+            self.print_binary_grid(model)
         
         if labels == None:
             labels = list(string.ascii_uppercase)[:self.c]
 
         spacer = (((self.s + 1) * 2) * self.t - 1)
         print("=" * spacer)
-        self.print_condensed_grid(solver, labels)
+        self.print_condensed_grid(model, labels)
         print("=" * spacer)
         
-        self.print_lifetimes(solver, labels)
+        self.print_lifetimes(model, labels)
 
         # pprint(self.decision_variables)
         print("DECISION VARIABLES")
-        print(f"Emplace: {[solver.Value(e) for e in self.emplace]}")
-        print(f"Idle:    {[solver.Value(e) for e in self.idle]}")
-        print(f"Remove:  {[solver.Value(e) for e in self.remove]}")
+        print(f"Emplace: {[model.Value(e) for e in self.emplace]}")
+        print(f"Idle:    {[model.Value(e) for e in self.idle]}")
+        print(f"Remove:  {[model.Value(e) for e in self.remove]}")
 
         if detail:
-            self.print_decisions(solver)
+            self.print_decisions(model)
         decision_spacer = (((self.s + 1) * 2) * (self.t - 1) - 1)
         print("=" * decision_spacer)
-        self.print_condensed_decisions(solver)
+        self.print_condensed_decisions(model)
         print("=" * decision_spacer)
