@@ -1,4 +1,4 @@
-import sys
+import argparse
 import json
 from inspect import getmembers, isfunction
 
@@ -10,6 +10,7 @@ import Constraints as Constraints
 def load_from_json(json_path : str):
     with open(json_path) as f:
         data = json.load(f)
+        print("Input file loaded: '" + json_path + "'")
 
     time, length, height = data["dimensions"]
     n_containers = len(data["containers"])
@@ -41,7 +42,20 @@ def load_from_json(json_path : str):
         matrix.print_solution(model, labels=labels)
 
 if __name__ == '__main__':
-    if len(sys.argv) == 2:
-        load_from_json(sys.argv[1])
-    elif len(sys.argv) == 1:
-        load_from_json("inputs/input.json") # Default json
+    my_parser = argparse.ArgumentParser(description='Run the solver for the Container Stacking Problem')
+
+    my_parser.add_argument('-solver',
+        metavar='--solver-package',
+        type=str,
+        required=True,
+        choices=['ortools', 'cplex'],
+        help="choice of solver to solve input problem. Currently supports 'ortools' and 'cplex'")
+
+    my_parser.add_argument('-path',
+        metavar='--input-path',
+        type=str,
+        default='inputs/input.json',
+        help="the path to the file with the input problem (.json). By default is 'inputs/input.json'")
+    args = my_parser.parse_args()
+
+    load_from_json(args.path)
