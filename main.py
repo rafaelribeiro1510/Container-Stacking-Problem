@@ -32,7 +32,7 @@ def load_from_json(json_path : str, solver_name : str):
     for container, (label, stack, height) in enumerate(data["containers"]):
         model.Add(matrix.get(0, container, stack, height) == 1)
     
-    model.Maximize(sum(matrix.idle)) # By maximizing the number of idle actions, we minimize emplaces and removes
+    model.Maximize(sum(matrix.idle)) # By maximizing the number of idle actions, we minimize emplaces and removes and inserts
 
     for label in labels:
         should_exist = 0 if label in data["remove"] else 1 # If 0, the container should be removed
