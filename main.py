@@ -7,18 +7,20 @@ from Model import Model
 import Constraints as Constraints
 
 
-def load_from_json(json_path : str):
+def load_from_json(json_path : str, solver_name : str):
     with open(json_path) as f:
         data = json.load(f)
         print("Input file loaded: '" + json_path + "'")
 
-    time, length, height = data["dimensions"]
+    length, height = data["dimensions"]
+    shipments = data["shipments"]
+    time = sum(shipment.duration for shipment in shipments)
     n_containers = len(data["containers"])
 
     index_lookup = {label : index for index, label in enumerate(i[0] for i in data["containers"])}
     labels = [i[0] for i in data["containers"]]
 
-    model = Model(ortools=True)
+    model = Model(solver_name)
     matrix = ContainerMatrix(model, time, n_containers, length, height)
 
     constraints = getmembers(Constraints, isfunction)
@@ -58,4 +60,4 @@ if __name__ == '__main__':
         help="the path to the file with the input problem (.json). By default is 'inputs/input.json'")
     args = my_parser.parse_args()
 
-    load_from_json(args.path)
+    load_from_json(args.path, args.solver)

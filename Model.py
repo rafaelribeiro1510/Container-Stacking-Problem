@@ -3,11 +3,11 @@ from docplex.cp.model import CpoModel
 from docplex.cp.solution import SOLVE_STATUS_OPTIMAL, SOLVE_STATUS_FEASIBLE
 
 class Model:
-    def __init__(self, ortools = False, cplex = False) -> None:
-        if ortools and cplex is False:
+    def __init__(self, solver_name : str) -> None:
+        if solver_name == 'ortools':
             self.ortools = CpModel()
             self.cplex = False
-        elif cplex and ortools is False:
+        elif solver_name == 'cplex':
             self.cplex = CpoModel()
             self.ortools = False
         else:
