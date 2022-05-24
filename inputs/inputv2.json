@@ -1,30 +1,42 @@
-[
-    {
-        "in": ["A", "B", "C", "D", "E", "F", "G"],
-        "out": [],
-        "duration": 10
-    },
-    {
-        "gap": 5
-    },
-    {
-        "in": ["1" ,"2" ,"3"],
-        "out": ["B", "D", "G"],
-        "duration": 10
-    },
-    {
-        "gap": 3
-    },
-    {
-        "in": [],
-        "out": ["A" ,"C" ,"E" ,"F"],
-        "duration": 6
-    },
-    {
-        "gap": 10
-    },
-    {
-        "in": [],
-        "out": ["1", "2", "3"]
-    }
-]
+{
+    "containers" : [],
+    "dimensions" : [4, 3],
+    "shipments": [
+        {
+            "in": ["A", "B", "C", "D", "E", "F", "G"],
+            "out": [],
+            "duration": 10,
+            "comments": "t[0,9]: Sum inserts = 7; Sum removes = 0"
+        },
+        {
+            "gap": 5,
+            "comments": "t[10,14]: Sum inserts & removes = 0; "
+        },
+        {
+            "in": ["1" ,"2" ,"3"],
+            "out": ["B", "D", "G"],
+            "duration": 10,
+            "comments": "t[15,24]: Sum inserts & removes = 3; "
+        },
+        {
+            "gap": 4,
+            "comments": "t[25,27]: Sum inserts & removes = 0; "
+        },
+        {
+            "in": [],
+            "out": ["A" ,"C" ,"E" ,"F"],
+            "duration": 6,
+            "comments": "t[28,33]: Sum removes = 4; Sum inserts = 0"
+        },
+        {
+            "gap": 10,
+            "comments": "t[34,45]: Sum inserts & removes = 0; "
+        },
+        {
+            "in": [],
+            "out": ["1", "2", "3"],
+            "duration": 5,
+            "comments": "t[46,50]: Sum removes = 3; Sum inserts = 0"
+        }
+    ]
+}

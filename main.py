@@ -12,7 +12,9 @@ def load_from_json(json_path : str, solver_name : str):
         data = json.load(f)
         print("Input file loaded: '" + json_path + "'")
 
-    time, length, height = data["dimensions"]
+    length, height = data["dimensions"]
+    shipments = data["shipments"]
+    time = sum(shipment.duration for shipment in shipments)
     n_containers = len(data["containers"])
 
     index_lookup = {label : index for index, label in enumerate(i[0] for i in data["containers"])}
