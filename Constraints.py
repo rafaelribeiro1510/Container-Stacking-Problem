@@ -31,8 +31,8 @@ def c4(model : Model, matrix : ContainerMatrix):
 # Restricts whether 'in' or 'out' can exist in the decision grids, based on the action that was chosen, at each time t
 def c5(model : Model, matrix : ContainerMatrix):
     for t in range(matrix.t - 1):
-        model.Add(sum(matrix.decision_get_range(t, "in",  None, None), 0) == matrix.emplace[t])
-        model.Add(sum(matrix.decision_get_range(t, "out", None, None), 0) == 1 - matrix.idle[t])
+        model.Add(sum(matrix.decision_get_range(t, "in",  None, None), 0) == matrix.emplace[t] + matrix.insert[t])
+        model.Add(sum(matrix.decision_get_range(t, "out", None, None), 0) == matrix.emplace[t] + matrix.remove[t])
 
 # For each time t, there cannot be both 'in' and 'out' on the same position
 def c6(model : Model, matrix : ContainerMatrix):
@@ -61,20 +61,20 @@ def c7(model : Model, matrix : ContainerMatrix):
 
                 model.AddIf(sum(matrix.get_range(t, None, s, h)) == out, b)
 
-# At the start, all containers are 'alive'
-def c8(model : Model, matrix : ContainerMatrix):
-    model.Add(sum(matrix.lifetime[0]) == matrix.c)
-
-# When a 'remove' action is chosen, the number of 'live' containers is reduced by one (1)
+# When a 'remove'  action is chosen, the number of 'live' containers is reduced   by one (1)
+# When an 'insert' action is chosen, the number of 'live' containers is increased by one (1)
 def c9(model : Model, matrix : ContainerMatrix):
     for t in range(matrix.t - 1):
-        model.Add(sum(matrix.lifetime[t]) == sum(matrix.lifetime[t + 1]) + matrix.remove[t])
+        model.Add(sum(matrix.lifetime[t]) == sum(matrix.lifetime[t + 1]) + matrix.remove[t] - matrix.insert[t])
 
 # When a container stops existing, it won't reappear
 def c10(model : Model, matrix : ContainerMatrix):
     for t in range(matrix.t - 1):
         for c in range(matrix.c):
-            model.Add(matrix.lifetime[t][c] >= matrix.lifetime[t + 1][c])
+            not_insert = model.NewBoolVar('b')
+            model.AddIf(matrix.insert[t] == 0, not_insert)
+            model.AddIf(matrix.insert[t] == 1, model.Not(not_insert))
+            model.AddIf(matrix.lifetime[t][c] >= matrix.lifetime[t + 1][c], not_insert)
 
 # If the action 'idle' is chosen, everything stays the same
 def c11(model : Model, matrix : ContainerMatrix):
@@ -156,7 +156,19 @@ def c15(model : Model, matrix : ContainerMatrix):
                 model.AddIf(sum(matrix.get_range(t, None, s, h))     == 1, b, b1)
                 model.AddIf(sum(matrix.get_range(t + 1, None, s, h)) == 0, b, b1)
 
-# This one is purely cosmetic
-def put_idles_at_the_end(model : Model, matrix : ContainerMatrix):
-    for t in range(len(matrix.idle) - 1):
-        model.Add(matrix.idle[t] <= matrix.idle[t + 1])
+
+# If the action 'insert' is chosen, every container that previously existed stays in the same place
+def c16(model : Model, matrix : ContainerMatrix):
+    for t in range(matrix.t - 1):
+        for c in range(matrix.c):
+            for s in range(matrix.s):
+                for h in range(matrix.h):
+                    insert = model.NewBoolVar('b')
+                    model.AddIf(matrix.insert[t] == 1, insert)
+                    model.AddIf(matrix.insert[t] == 0, model.Not(insert))
+
+                    b1 = model.NewBoolVar('b1')
+                    model.AddIf(matrix.decision_get(t, "in", s, h) == 1, b1)
+                    model.AddIf(matrix.decision_get(t, "in", s, h) == 0, model.Not(b1))
+
+                    model.AddIf(matrix.get(t, c, s, h) == matrix.get(t + 1, c, s, h), insert, model.Not(b1))
