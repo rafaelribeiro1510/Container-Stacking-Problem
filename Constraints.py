@@ -25,8 +25,8 @@ def c3(model : Model, matrix : ContainerMatrix):
 
 # For each time t, only one action can be chosen
 def c4(model : Model, matrix : ContainerMatrix):
-    for trio in zip(matrix.emplace, matrix.idle, matrix.remove):
-        model.Add(sum(trio) == 1)
+    for quartet in zip(matrix.emplace, matrix.idle, matrix.remove, matrix.insert):
+        model.Add(sum(quartet) == 1)
 
 # Restricts whether 'in' or 'out' can exist in the decision grids, based on the action that was chosen, at each time t
 def c5(model : Model, matrix : ContainerMatrix):

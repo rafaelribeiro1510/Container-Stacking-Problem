@@ -33,12 +33,14 @@ class ContainerMatrix:
         self.idle = []
         self.remove = []
         self.emplace = []
+        self.insert = []
         self.decision_variables = {}
 
         for time in range(t - 1):
-            self.idle.append(model.NewIntVar(0, 1, f"d{time}i"))
-            self.remove.append(model.NewIntVar(0, 1, f"d{time}r"))
-            self.emplace.append(model.NewIntVar(0, 1, f"d{time}e"))
+            self.idle.append(model.NewIntVar(0, 1, f"d{time}idle"))
+            self.remove.append(model.NewIntVar(0, 1, f"d{time}remove"))
+            self.emplace.append(model.NewIntVar(0, 1, f"d{time}emplace"))
+            self.insert.append(model.NewIntVar(0, 1, f"d{time}insert"))
             for stack in range(s):
                 for height in range(h):
                     identifier = f"d{time}s{stack}h{height}"
@@ -193,9 +195,18 @@ class ContainerMatrix:
 
         # pprint(self.decision_variables)
         print("DECISION VARIABLES")
-        print(f"Emplace: {[model.Value(e) for e in self.emplace]}")
-        print(f"Idle:    {[model.Value(e) for e in self.idle]}")
-        print(f"Remove:  {[model.Value(e) for e in self.remove]}")
+        print("Decisions: ", end="")
+        decisions = []
+        for i in range(len(self.emplace)):
+            if   model.Value(self.emplace[i]) == 1:
+                decisions.append("Em")
+            elif model.Value(self.idle[i])    == 1:
+                decisions.append("Id")
+            elif model.Value(self.remove[i])  == 1:
+                decisions.append("Re")
+            elif model.Value(self.insert[i])  == 1:
+                decisions.append("In")
+        print("[" + ", ".join(decisions) + "]")
 
         if detail:
             self.print_decisions(model)
