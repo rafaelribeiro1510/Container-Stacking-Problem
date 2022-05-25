@@ -11,7 +11,7 @@ class Model:
             self.cplex = CpoModel()
             self.ortools = False
         else:
-            raise Exception("Model can't be of both types")
+            raise Exception("Solver not supported")
 
     # Model methods
     def Not(self, b):

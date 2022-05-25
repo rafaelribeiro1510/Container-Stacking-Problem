@@ -14,14 +14,18 @@ def load_from_json(json_path : str, solver_name : str):
 
     length, height = data["dimensions"]
     shipments = data["shipments"]
-    time = sum(shipment.duration for shipment in shipments)
-    n_containers = len(data["containers"])
+    time = sum(shipment["duration"] for shipment in shipments)
 
-    index_lookup = {label : index for index, label in enumerate(i[0] for i in data["containers"])}
+    containers = data["containers"]
+    for shipment in shipments:
+        if "in" in shipment:
+            containers += shipment["in"]
+
+    index_lookup = {label : index for index, label in enumerate(i[0] for i in containers)}
     labels = [i[0] for i in data["containers"]]
 
     model = Model(solver_name)
-    matrix = ContainerMatrix(model, time, n_containers, length, height)
+    matrix = ContainerMatrix(model, time, len(containers), length, height)
 
     constraints = getmembers(Constraints, isfunction)
     for _, constraint in constraints: 

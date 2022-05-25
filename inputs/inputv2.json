@@ -9,7 +9,7 @@
             "comments": "t[0,9]: Sum inserts = 7; Sum removes = 0"
         },
         {
-            "gap": 5,
+            "duration": 5,
             "comments": "t[10,14]: Sum inserts & removes = 0; "
         },
         {
@@ -19,7 +19,7 @@
             "comments": "t[15,24]: Sum inserts & removes = 3; "
         },
         {
-            "gap": 4,
+            "duration": 4,
             "comments": "t[25,27]: Sum inserts & removes = 0; "
         },
         {
@@ -29,7 +29,7 @@
             "comments": "t[28,33]: Sum removes = 4; Sum inserts = 0"
         },
         {
-            "gap": 10,
+            "duration": 10,
             "comments": "t[34,45]: Sum inserts & removes = 0; "
         },
         {
