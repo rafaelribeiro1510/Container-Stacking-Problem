@@ -1,8 +1,33 @@
 import string
 from typing import Tuple, List, Union
-from pprint import pprint
+import pygame
 
 from Model import Model
+
+COLORS = [
+    (230, 25, 75), 
+    (60, 180, 75), 
+    (255, 225, 25), 
+    (0, 130, 200), 
+    (245, 130, 48), 
+    (145, 30, 180), 
+    (70, 240, 240),
+    (240, 50, 230), 
+    (210, 245, 60), 
+    (250, 190, 212), 
+    (0, 128, 128),
+    (220, 190, 255), 
+    (170, 110, 40), 
+    (255, 250, 200), 
+    (128, 0, 0), 
+    (170, 255, 195), 
+    (128, 128, 0), 
+    (255, 215, 180), 
+    (0, 0, 128), 
+    (128, 128, 128), 
+    (255, 255, 255), 
+    (0, 0, 0),
+]
 
 class ContainerMatrix:
     def __init__(self, model : Model, t : int, c : int, s : int, h : int) -> None:
@@ -214,3 +239,82 @@ class ContainerMatrix:
         print("=" * decision_spacer)
         self.print_condensed_decisions(model)
         print("=" * decision_spacer)
+    
+    def visualize(self, model : Model, labels : Union[List[str], str] = None):
+        if labels == None:
+            labels = list(string.ascii_uppercase)[:self.c]
+        pygame.init()
+        win = pygame.display.set_mode((self.s * 36 + 300, self.h * 36 + 100))
+        pygame.display.set_caption("Container animation")
+
+        font = pygame.font.SysFont(None, 50)
+
+        state = 0
+        state_already_changed = False
+
+        run = True
+        while run:
+            pygame.time.delay(10)
+            
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    run = False
+
+            keys = pygame.key.get_pressed()
+            if keys[pygame.K_LEFT]:
+                if not state_already_changed:
+                    state -= 1
+                    state_already_changed = True
+            elif keys[pygame.K_RIGHT]:
+                if not state_already_changed:
+                    state += 1
+                    state_already_changed = True
+            else:
+                state_already_changed = False
+                    
+            state = max(0, min(state, len(self.idle)))
+
+
+            win.fill((255, 255, 255))
+
+            img = font.render(f"t={state}", True, (0, 0, 0))
+            win.blit(img, (self.s * 36 + 220, 20))
+
+            next_instruction = None
+            if state < self.t - 1:
+                if   model.Value(self.idle[state])    == 1:
+                    next_instruction = "Idle"
+                elif model.Value(self.emplace[state]) == 1:
+                    next_instruction = "Emplace"
+                elif model.Value(self.remove[state])  == 1:
+                    next_instruction = "Remove"
+                elif model.Value(self.insert[state])  == 1:
+                    next_instruction = "Insert"
+            else:
+                next_instruction = "Done"
+
+            img = pygame.font.SysFont(None, 25).render(f"Next instruction: {next_instruction}", True, (0, 0, 0))
+            win.blit(img, (20, 20))
+
+            X = 36 * self.s / 2 + 100
+            Y = 36 * self.h + 50
+
+            for height in reversed(range(self.h)):
+                for stack in range(self.s):
+                    v_range = self.get_range(state, None, stack, height, no_dimensions=False)
+                    for v in v_range:
+                        if model.Value(v[4]) != 0:
+                            background_color = COLORS[v[1] % len(COLORS)]
+                            foreground_color = (0, 0, 0) if sum(background_color) / 3 >= 256 / 2 else (255, 255, 255)
+
+                            name = labels[v[1]]
+                            img = font.render(name, True, foreground_color)
+                            pygame.draw.rect(win, background_color, (X + stack * 36 + 1, Y - height * 36 + 1, 35, 35))
+                            win.blit(img, (X + stack * 36 + 2, Y - height * 36 + 4))
+                            break
+                    else:
+                        pygame.draw.rect(win, (240, 240, 240), (X + stack * 36 + 1, Y - height * 36 + 1, 35, 35))
+
+            pygame.display.update()
+
+        pygame.quit()
