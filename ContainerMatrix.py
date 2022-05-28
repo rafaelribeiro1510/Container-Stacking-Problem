@@ -240,7 +240,7 @@ class ContainerMatrix:
         self.print_condensed_decisions(model)
         print("=" * decision_spacer)
     
-    def visualize(self, model : Model, labels : Union[List[str], str] = None):
+    def visualize(self, model : Model, shipments : List[dict], labels : Union[List[str], str] = None):
         if labels == None:
             labels = list(string.ascii_uppercase)[:self.c]
         pygame.init()
@@ -295,6 +295,23 @@ class ContainerMatrix:
 
             img = pygame.font.SysFont(None, 25).render(f"Next instruction: {next_instruction}", True, (0, 0, 0))
             win.blit(img, (20, 20))
+
+            counter = 0
+            message = None
+
+            for shipment in shipments:
+                next_counter = counter + shipment["duration"]
+
+                if counter <= state < next_counter:
+                    if "in" in shipment:
+                        message = f"Shipment d={shipment['duration']} in={shipment['in']} out={shipment['out']}"
+                    else:
+                        message = f"Gap d={shipment['duration']}"
+                    break    
+                counter = next_counter
+
+            img = pygame.font.SysFont(None, 25).render(message, True, (0, 0, 0))
+            win.blit(img, (20, 40))
 
             X = 36 * self.s / 2 + 100
             Y = 36 * self.h + 50

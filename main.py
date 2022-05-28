@@ -158,7 +158,7 @@ def load_from_json(json_path : str, solver_name : str):
     if status == model.OPTIMAL or status == model.FEASIBLE:
         # matrix.print_solution(model, labels=labels)
         print("Visualizing")
-        matrix.visualize(model, labels=labels)
+        matrix.visualize(model, shipments, labels=labels)
 
 if __name__ == '__main__':
     my_parser = argparse.ArgumentParser(description='Run the solver for the Container Stacking Problem')
