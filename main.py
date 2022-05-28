@@ -89,31 +89,37 @@ def load_from_json(json_path : str, solver_name : str):
     labels = containers
 
     model = Model(solver_name)
+    print("Generating matrix")
     matrix = ContainerMatrix(model, time, len(containers), length, height)
 
+    print("Implementing matrix constraints")
     constraints = getmembers(Constraints, isfunction)
     for _, constraint in constraints: 
         # print(_)
         constraint(model, matrix)
     
-    # Setting the initial container positions
+    print("Setting initial container positions")
     for container, (label, stack, height) in enumerate(initial_container_positions):
         model.Add(matrix.get(0, container, stack, height) == 1)
     
+    print("Setting initial container lifetime")
     for i, container in enumerate(containers):
         if container in [i[0] for i in initial_container_positions]:
             model.Add(matrix.lifetime[0][i] == 1)
         else:
             model.Add(matrix.lifetime[0][i] == 0)
 
+    print("Enforcing container lifetime restrictions")
     enforce_container_lifetime_restrictions(model, matrix, labels, index_lookup, initial_container_positions, shipments, time)
     
     model.Maximize(sum(matrix.idle)) # By maximizing the number of idle actions, we minimize emplaces and removes and inserts
     
+    print("solving")
     status = model.Solve()
 
     if status == model.OPTIMAL or status == model.FEASIBLE:
-        matrix.print_solution(model, labels=labels)
+        # matrix.print_solution(model, labels=labels)
+        print("Visualizing")
         matrix.visualize(model, labels=labels)
 
 if __name__ == '__main__':
