@@ -6,6 +6,68 @@ from ContainerMatrix import ContainerMatrix
 from Model import Model
 import Constraints as Constraints
 
+def enforce_container_lifetime_restrictions(model : Model, matrix : ContainerMatrix, labels, index_lookup, initial_container_positions, shipments, time):
+    for container in labels:
+        # This is the life cycle of the containers
+        dead       = [None, None]
+        in_        = [None, None]
+        alive      = [None, None]
+        out        = [None, None]
+        dead_again = [None, None]
+
+        dead = [0, 0]
+
+        for shipment in shipments:
+            if alive == [None, None] and container in (c[0] for c in initial_container_positions):
+                dead = [0, 0]
+                in_  = [0, 0]
+                alive = [0, shipment["duration"]]
+                continue
+
+            if in_ == [None, None]:
+                if "in" not in shipment:
+                    dead[1] += shipment["duration"]
+                elif container not in shipment["in"]:
+                    dead[1] += shipment["duration"]
+                elif container in shipment["in"]:
+                    in_ = [dead[1], dead[1] + shipment["duration"]]
+                else:
+                    raise Exception("Unreachable code")
+                
+            elif alive == [None, None]:
+                alive = [in_[1], in_[1] + shipment["duration"]]
+
+            elif out == [None, None]:
+                if "out" not in shipment:
+                    alive[1] += shipment["duration"]
+                elif container not in shipment["out"]:
+                    alive[1] += shipment["duration"]
+                elif container in shipment["out"]:
+                    out = [alive[1], alive[1] + shipment["duration"]]
+                    dead_again = [alive[1] + shipment["duration"], time]
+                    break
+                else:
+                    raise Exception("Unreachable code")
+        
+        if out == [None, None] and dead_again == [None, None]:
+            out = [time, time]
+            dead_again = [time, time]
+        
+        # print(f"{dead=} {in_=} {alive=} {out=} {dead_again=}")
+        # input()
+
+        for t in range(time):
+            if dead[0] <= t < dead[1] or dead_again[0] <= t < dead_again[1]:
+                model.Add(matrix.lifetime[t][index_lookup[container]] == 0)
+            elif alive[0] <= t < alive[1]:
+                model.Add(matrix.lifetime[t][index_lookup[container]] == 1)
+        
+    final_shipment = shipments[-1]
+    if "in" in final_shipment and "out" in final_shipment:
+        for c in final_shipment["in"]:
+            model.Add(matrix.lifetime[-1][index_lookup[c]] == 1)
+        for c in final_shipment["out"]:
+            model.Add(matrix.lifetime[-1][index_lookup[c]] == 0)
 
 def load_from_json(json_path : str, solver_name : str):
     with open(json_path) as f:
@@ -16,13 +78,15 @@ def load_from_json(json_path : str, solver_name : str):
     shipments = data["shipments"]
     time = sum(shipment["duration"] for shipment in shipments)
 
-    containers = data["containers"]
+    initial_container_positions = data["containers"]
+
+    containers = [i[0] for i in initial_container_positions]
     for shipment in shipments:
         if "in" in shipment:
             containers += shipment["in"]
 
-    index_lookup = {label : index for index, label in enumerate(i[0] for i in containers)}
-    labels = [i[0] for i in data["containers"]]
+    index_lookup = {label : index for index, label in enumerate(containers)}
+    labels = containers
 
     model = Model(solver_name)
     matrix = ContainerMatrix(model, time, len(containers), length, height)
@@ -33,19 +97,24 @@ def load_from_json(json_path : str, solver_name : str):
         constraint(model, matrix)
     
     # Setting the initial container positions
-    for container, (label, stack, height) in enumerate(data["containers"]):
+    for container, (label, stack, height) in enumerate(initial_container_positions):
         model.Add(matrix.get(0, container, stack, height) == 1)
     
-    model.Maximize(sum(matrix.idle)) # By maximizing the number of idle actions, we minimize emplaces and removes and inserts
+    for i, container in enumerate(containers):
+        if container in [i[0] for i in initial_container_positions]:
+            model.Add(matrix.lifetime[0][i] == 1)
+        else:
+            model.Add(matrix.lifetime[0][i] == 0)
 
-    for label in labels:
-        should_exist = 0 if label in data["remove"] else 1 # If 0, the container should be removed
-        model.Add(matrix.lifetime[-1][index_lookup[label]] == should_exist)
+    enforce_container_lifetime_restrictions(model, matrix, labels, index_lookup, initial_container_positions, shipments, time)
+    
+    model.Maximize(sum(matrix.idle)) # By maximizing the number of idle actions, we minimize emplaces and removes and inserts
     
     status = model.Solve()
 
     if status == model.OPTIMAL or status == model.FEASIBLE:
         matrix.print_solution(model, labels=labels)
+        matrix.visualize(model, labels=labels)
 
 if __name__ == '__main__':
     my_parser = argparse.ArgumentParser(description='Run the solver for the Container Stacking Problem')
