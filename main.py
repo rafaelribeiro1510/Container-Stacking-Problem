@@ -69,6 +69,41 @@ def enforce_container_lifetime_restrictions(model : Model, matrix : ContainerMat
         for c in final_shipment["out"]:
             model.Add(matrix.lifetime[-1][index_lookup[c]] == 0)
 
+def enforce_container_loading_restrictions(model : Model, matrix : ContainerMatrix, shipments):
+    move_counter = 0
+    for shipment in shipments:
+        next_move_counter = move_counter+shipment["duration"]
+
+        if "in" not in shipment:
+            model.Add(sum(matrix.insert[move_counter:next_move_counter]) == 0)
+            model.Add(sum(matrix.remove[move_counter:next_move_counter]) == 0)
+        
+        move_counter += next_move_counter
+
+    in_ = 0
+    out = 0
+    for shipment in shipments:
+        if "in" in shipment:
+            in_ += len(shipment["in"])
+            out += len(shipment["out"])
+    
+    model.Add(sum(matrix.insert) == in_)
+    model.Add(sum(matrix.remove) == out)
+
+def minimize_ship_loading_time(model : Model, matrix : ContainerMatrix, shipments):
+    ship_idles = 0
+
+    move_counter = 0
+    for shipment in shipments:
+        next_move_counter = move_counter+shipment["duration"]
+
+        if "in" in shipment:
+            ship_idles += sum(matrix.idle[move_counter:next_move_counter])
+        
+        move_counter += next_move_counter
+
+    model.Maximize(ship_idles * 100000 + sum(matrix.idle)) # By maximizing the number of idle actions, we minimize emplaces and removes and inserts
+
 def load_from_json(json_path : str, solver_name : str):
     with open(json_path) as f:
         data = json.load(f)
@@ -111,8 +146,11 @@ def load_from_json(json_path : str, solver_name : str):
 
     print("Enforcing container lifetime restrictions")
     enforce_container_lifetime_restrictions(model, matrix, labels, index_lookup, initial_container_positions, shipments, time)
+
+    print("Enforcing container movement restrictions")
+    enforce_container_loading_restrictions(model, matrix, shipments)
     
-    model.Maximize(sum(matrix.idle)) # By maximizing the number of idle actions, we minimize emplaces and removes and inserts
+    minimize_ship_loading_time(model, matrix, shipments)
     
     print("solving")
     status = model.Solve()
