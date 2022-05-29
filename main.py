@@ -90,6 +90,25 @@ def enforce_container_loading_restrictions(model : Model, matrix : ContainerMatr
     model.Add(sum(matrix.insert) == in_)
     model.Add(sum(matrix.remove) == out)
 
+def enforce_weight_restrictions(model : Model, matrix : ContainerMatrix, weights : dict, index_lookup : dict):
+    weight_array = [0] * len(index_lookup)
+
+    for c, weight in weights.items():
+        weight_array[index_lookup[c]] = weight
+    
+    for t in range(matrix.t):
+        for s in range(matrix.s):
+            for h in range(matrix.h):
+                for c in range(matrix.c):
+                    container_is_here = model.NewBoolVar('b')
+                    model.AddIf(matrix.get(t, c, s, h) == 1, container_is_here)
+                    model.AddIf(matrix.get(t, c, s, h) == 0, model.Not(container_is_here))
+
+                    for container in range(matrix.c):
+                        for height in range(matrix.h):
+                            if container != c and height < h and weight_array[container] < weight_array[c]:
+                                model.AddIf(matrix.get(t, container, s, height) == 0, container_is_here)
+
 def minimize_ship_loading_time(model : Model, matrix : ContainerMatrix, shipments):
     ship_idles = 0
 
@@ -112,6 +131,7 @@ def load_from_json(json_path : str, solver_name : str):
     length, height = data["dimensions"]
     shipments = data["shipments"]
     time = sum(shipment["duration"] for shipment in shipments)
+    weights = data["weights"]
 
     initial_container_positions = data["containers"]
 
@@ -149,6 +169,9 @@ def load_from_json(json_path : str, solver_name : str):
 
     print("Enforcing container movement restrictions")
     enforce_container_loading_restrictions(model, matrix, shipments)
+
+    print("Enforcing weight restrictions")
+    enforce_weight_restrictions(model, matrix, weights, index_lookup)
     
     minimize_ship_loading_time(model, matrix, shipments)
     

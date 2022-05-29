@@ -41,5 +41,9 @@
             "duration": 5,
             "comments": "t[46,50]: Sum removes = 3; Sum inserts = 0"
         }
-    ]
+    ],
+    "weights" : {
+        "A" : 2,
+        "1" : 2
+    }
 }
