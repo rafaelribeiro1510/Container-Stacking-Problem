@@ -150,9 +150,10 @@ def load_from_json(json_path : str, solver_name : str):
     print("Implementing matrix constraints")
     constraints = getmembers(Constraints, isfunction)
     for _, constraint in constraints: 
-        # print(_)
+        print(_, end=" ")
         constraint(model, matrix)
-    
+    print()
+
     print("Setting initial container positions")
     for container, (label, stack, height) in enumerate(initial_container_positions):
         model.Add(matrix.get(0, container, stack, height) == 1)
