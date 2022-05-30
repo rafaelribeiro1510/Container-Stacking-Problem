@@ -9,13 +9,23 @@ from ContainerMatrix import ContainerMatrix
 from Model import Model
 import Constraints as Constraints
 
+def positive_int(x):
+    i = int(x)
+    if i < 0:
+        raise argparse.ArgumentTypeError("%s is an invalid positive integer value" % x)
+    return i
+def positive_float(x):
+    f = float(x)
+    if f < 0:
+        raise argparse.ArgumentTypeError("%s is an invalid positive float value" % x)
+    return f
 
-def load_from_json(json_path : str, logs : bool = True):
-    with open(json_path) as f:
+def load_from_json(args : object, logs : bool = True):
+    with open(args.path) as f:
         data = json.load(f)
         
         if logs:
-            print("Input file loaded: '" + json_path + "'")
+            print("Input file loaded: '" + args.path + "'")
 
     time, length, height = data["dimensions"]
     n_containers = len(data["containers"])
@@ -41,10 +51,11 @@ def load_from_json(json_path : str, logs : bool = True):
         should_exist = 0 if label in data["remove"] else 1 # If 0, the container should be removed
         model.Add(matrix.lifetime[-1][index_lookup[label]] == should_exist)
     
-    status = model.Solve()
+    solution = model.Solve(args.time)
 
     if logs:
-        if status == model.OPTIMAL or status == model.FEASIBLE:
+        if solution['status'] == model.OPTIMAL or solution['status'] == model.FEASIBLE:
+            print('Solution time (s)', solution['time'])
             matrix.print_solution(model, labels=labels)
 
 if __name__ == '__main__':
@@ -66,16 +77,23 @@ if __name__ == '__main__':
     my_parser.add_argument('-benchmark',
         metavar='--benchmark-runs',
         nargs='?',
-        type=int,
+        type=positive_int,
         default=0,
         help="number of runs for benchmarking time (recommended: 5)")
+    
+    my_parser.add_argument('-time',
+        metavar='--max-time',
+        nargs='?',
+        type=positive_float,
+        default=0,
+        help="time limit (in seconds) to return solution. Either returns sub-optimal one, or none")
     args = my_parser.parse_args()
 
     if args.benchmark == 0:
-        load_from_json(args.path)
+        load_from_json(args)
 
     else:
-        t = timeit.Timer(lambda: load_from_json(args.path, logs=False))
+        t = timeit.Timer(lambda: load_from_json(args, logs=False))
         print("Solver [", args.solver, "]")
         print("Number runs [", args.benchmark, "]")
-        print("Time avg(s): ", t.timeit(args.benchmark))
+        print("Time avg(s): ", t.timeit(args.benchmark)/args.benchmark)

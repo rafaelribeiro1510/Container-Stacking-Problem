@@ -58,14 +58,30 @@ class Model:
         elif self.cplex:
             return self.solver.get_value(expr)
 
-    def Solve(self):
+    def Solve(self, max_time=0):
         if self.ortools:
             self.OPTIMAL = OPTIMAL
             self.FEASIBLE = FEASIBLE
             self.solver = CpSolver()
-            return self.solver.Solve(self.ortools)
+            
+            if max_time > 0:
+                self.solver.max_time_in_seconds = max_time
+                print(self.solver.max_time_in_seconds)
+            
+            status = self.solver.Solve(self.ortools)
+            return {
+                "status": status,
+                "time": self.solver.WallTime()
+            }
         elif self.cplex:
             self.OPTIMAL = SOLVE_STATUS_OPTIMAL
             self.FEASIBLE = SOLVE_STATUS_FEASIBLE
+            
+            if max_time > 0:
+                self.cplex.parameters.timelimit = max_time
+
             self.solver = self.cplex.solve(execfile='/opt/ibm/ILOG/CPLEX_Studio201/cpoptimizer/bin/x86-64_linux/cpoptimizer')
-            return self.solver.get_solve_status()
+            return {
+                "status": self.solver.get_solve_status(),
+                "time": self.solver.get_solve_time()
+            }
