@@ -11,12 +11,12 @@
     "dimensions" : [3, 7],
     "shipments" : [
         {
-            "duration" : 16
+            "duration" : 33
         },
         {
             "in": [],
             "out": ["9"],
-            "duration" : 20
+            "duration" : 2
         }
     ],
     "weights" : {

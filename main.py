@@ -183,6 +183,8 @@ def load_from_json(json_path : str, solver_name : str):
         # matrix.print_solution(model, labels=labels)
         print("Visualizing")
         matrix.visualize(model, shipments, labels=labels)
+    else:
+        print("No solution found!")
 
 if __name__ == '__main__':
     my_parser = argparse.ArgumentParser(description='Run the solver for the Container Stacking Problem')
