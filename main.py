@@ -150,7 +150,7 @@ def load_from_json(json_path : str, solver_name : str):
     print("Implementing matrix constraints")
     constraints = getmembers(Constraints, isfunction)
     for _, constraint in constraints: 
-        print(_, end=" ")
+        print(_, end=" ", flush=True)
         constraint(model, matrix)
     print()
 
