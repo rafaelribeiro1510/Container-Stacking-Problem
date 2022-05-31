@@ -1,10 +1,24 @@
+import timeit
 import argparse
 import json
 from inspect import getmembers, isfunction
 
+from numpy import number
+
 from ContainerMatrix import ContainerMatrix
 from Model import Model
 import Constraints as Constraints
+
+def positive_int(x):
+    i = int(x)
+    if i < 0:
+        raise argparse.ArgumentTypeError("%s is an invalid positive integer value" % x)
+    return i
+def positive_float(x):
+    f = float(x)
+    if f < 0:
+        raise argparse.ArgumentTypeError("%s is an invalid positive float value" % x)
+    return f
 
 def enforce_container_lifetime_restrictions(model : Model, matrix : ContainerMatrix, labels, index_lookup, initial_container_positions, shipments, time):
     for container in labels:
@@ -123,10 +137,12 @@ def minimize_ship_loading_time(model : Model, matrix : ContainerMatrix, shipment
 
     model.Maximize(ship_idles * 100000 + sum(matrix.idle)) # By maximizing the number of idle actions, we minimize emplaces and removes and inserts
 
-def load_from_json(json_path : str, solver_name : str):
-    with open(json_path) as f:
+def load_from_json(args : object, logs : bool = False, visualize : bool = True) -> dict:
+    with open(args.path) as f:
         data = json.load(f)
-        print("Input file loaded: '" + json_path + "'")
+        
+        if logs:
+            print("Input file loaded: '" + args.path + "'")
 
     length, height = data["dimensions"]
     shipments = data["shipments"]
@@ -143,49 +159,65 @@ def load_from_json(json_path : str, solver_name : str):
     index_lookup = {label : index for index, label in enumerate(containers)}
     labels = containers
 
-    model = Model(solver_name)
-    print("Generating matrix")
+    model = Model(args.solver)
+    if logs:
+        print("Generating matrix")
     matrix = ContainerMatrix(model, time, len(containers), length, height)
 
-    print("Implementing matrix constraints")
+    if logs:
+        print("Implementing matrix constraints")
     constraints = getmembers(Constraints, isfunction)
     for _, constraint in constraints: 
-        print(_, end=" ", flush=True)
+        if logs:
+            print(_, end=" ", flush=True)
         constraint(model, matrix)
-    print()
+    if logs:
+        print()
 
-    print("Setting initial container positions")
+    if logs:
+        print("Setting initial container positions")
     for container, (label, stack, height) in enumerate(initial_container_positions):
         model.Add(matrix.get(0, container, stack, height) == 1)
     
-    print("Setting initial container lifetime")
+    if logs:
+        print("Setting initial container lifetime")
     for i, container in enumerate(containers):
         if container in [i[0] for i in initial_container_positions]:
             model.Add(matrix.lifetime[0][i] == 1)
         else:
             model.Add(matrix.lifetime[0][i] == 0)
 
-    print("Enforcing container lifetime restrictions")
+    if logs:
+        print("Enforcing container lifetime restrictions")
     enforce_container_lifetime_restrictions(model, matrix, labels, index_lookup, initial_container_positions, shipments, time)
 
-    print("Enforcing container movement restrictions")
+    if logs:
+        print("Enforcing container movement restrictions")
     enforce_container_loading_restrictions(model, matrix, shipments)
 
-    print("Enforcing weight restrictions")
+    if logs:
+        print("Enforcing weight restrictions")
     enforce_weight_restrictions(model, matrix, weights, index_lookup)
     
     minimize_ship_loading_time(model, matrix, shipments)
     
-    print("solving")
-    status = model.Solve()
+    solution = model.Solve(args.time)
 
-    if status == model.OPTIMAL or status == model.FEASIBLE:
-        # matrix.print_solution(model, labels=labels)
-        print("Visualizing")
-        matrix.visualize(model, shipments, labels=labels)
+    if solution['status'] == model.OPTIMAL or solution['status'] == model.FEASIBLE:
+        if logs:
+            print('Solution time (s):', solution['time'])
+            print('Objective value:', solution['objective'], 'OPTIMAL' if solution['status'] == model.OPTIMAL else '')
+            matrix.print_solution(model, labels=labels)
+        if visualize:
+            matrix.visualize(model, shipments, labels=labels)
+
+        # print(solution)
     else:
-        print("No solution found!")
-
+        print("No feasible solution found")
+    
+    return solution
+    
+    
 if __name__ == '__main__':
     my_parser = argparse.ArgumentParser(description='Run the solver for the Container Stacking Problem')
 
@@ -201,6 +233,30 @@ if __name__ == '__main__':
         type=str,
         default='inputs/input.json',
         help="the path to the file with the input problem (.json). By default is 'inputs/input.json'")
+
+    my_parser.add_argument('-benchmark',
+        metavar='--benchmark-runs',
+        nargs='?',
+        type=positive_int,
+        default=0,
+        help="number of runs for benchmarking time (recommended: 5)")
+    
+    my_parser.add_argument('-time',
+        metavar='--max-time',
+        nargs='?',
+        type=positive_float,
+        default=0,
+        help="time limit (in seconds) to return solution. Either returns sub-optimal one, or none")
     args = my_parser.parse_args()
 
-    load_from_json(args.path, args.solver)
+    if args.benchmark == 0:
+        load_from_json(args, logs=True)
+
+    else:
+        print("Solver [", args.solver, "]")
+        print("Number runs [", args.benchmark, "]")
+
+        t = timeit.Timer(lambda: load_from_json(args, visualize=False)['status'])
+        print(t.timeit(number=args.benchmark)/args.benchmark)
+        # (total_time, sol) = t.timeit(args.benchmark)
+        # print("Time avg(s): ", total_time/args.benchmark)
