@@ -20,7 +20,7 @@ def positive_float(x):
         raise argparse.ArgumentTypeError("%s is an invalid positive float value" % x)
     return f
 
-def load_from_json(args : object, logs : bool = True):
+def load_from_json(args : object, logs : bool = True) -> int:
     with open(args.path) as f:
         data = json.load(f)
         
@@ -53,10 +53,17 @@ def load_from_json(args : object, logs : bool = True):
     
     solution = model.Solve(args.time)
 
-    if logs:
-        if solution['status'] == model.OPTIMAL or solution['status'] == model.FEASIBLE:
-            print('Solution time (s)', solution['time'])
+    if solution['status'] == model.OPTIMAL or solution['status'] == model.FEASIBLE:
+        if logs:
+            print('Solution time (s):', solution['time'])
+            print('Objective value:', solution['objective'], 'OPTIMAL' if solution['status'] == model.OPTIMAL else '')
             matrix.print_solution(model, labels=labels)
+        print(solution)
+    else:
+        print("No feasible solution found")
+    
+    return solution
+    
 
 if __name__ == '__main__':
     my_parser = argparse.ArgumentParser(description='Run the solver for the Container Stacking Problem')
@@ -93,7 +100,10 @@ if __name__ == '__main__':
         load_from_json(args)
 
     else:
-        t = timeit.Timer(lambda: load_from_json(args, logs=False))
         print("Solver [", args.solver, "]")
         print("Number runs [", args.benchmark, "]")
-        print("Time avg(s): ", t.timeit(args.benchmark)/args.benchmark)
+
+        t = timeit.Timer(lambda: load_from_json(args, logs=False)['status'])
+        print(t.timeit(number=args.benchmark)/args.benchmark)
+        # (total_time, sol) = t.timeit(args.benchmark)
+        # print("Time avg(s): ", total_time/args.benchmark)

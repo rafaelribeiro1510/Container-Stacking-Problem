@@ -65,13 +65,13 @@ class Model:
             self.solver = CpSolver()
             
             if max_time > 0:
-                self.solver.max_time_in_seconds = max_time
-                print(self.solver.max_time_in_seconds)
+                self.solver.parameters.max_time_in_seconds = max_time
             
             status = self.solver.Solve(self.ortools)
             return {
                 "status": status,
-                "time": self.solver.WallTime()
+                "time": self.solver.WallTime(),
+                "objective": self.solver.ObjectiveValue()
             }
         elif self.cplex:
             self.OPTIMAL = SOLVE_STATUS_OPTIMAL
@@ -80,8 +80,9 @@ class Model:
             if max_time > 0:
                 self.cplex.parameters.timelimit = max_time
 
-            self.solver = self.cplex.solve(execfile='/opt/ibm/ILOG/CPLEX_Studio201/cpoptimizer/bin/x86-64_linux/cpoptimizer')
+            self.solver = self.cplex.solve(execfile='/opt/ibm/ILOG/CPLEX_Studio201/cpoptimizer/bin/x86-64_linux/cpoptimizer', log_output=False)
             return {
                 "status": self.solver.get_solve_status(),
-                "time": self.solver.get_solve_time()
+                "time": self.solver.get_solve_time(),
+                "objective": self.solver.objective_value
             }
