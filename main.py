@@ -20,7 +20,7 @@ def positive_float(x):
         raise argparse.ArgumentTypeError("%s is an invalid positive float value" % x)
     return f
 
-def load_from_json(args : object, logs : bool = True) -> int:
+def load_from_json(args : object, logs : bool = True) -> dict:
     with open(args.path) as f:
         data = json.load(f)
         
