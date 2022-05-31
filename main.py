@@ -33,7 +33,7 @@ def load_from_json(args : object, logs : bool = True) -> dict:
     index_lookup = {label : index for index, label in enumerate(i[0] for i in data["containers"])}
     labels = [i[0] for i in data["containers"]]
 
-    model = Model(ortools=True)
+    model = Model(args.solver)
     matrix = ContainerMatrix(model, time, n_containers, length, height)
 
     constraints = getmembers(Constraints, isfunction)
@@ -92,7 +92,7 @@ if __name__ == '__main__':
         metavar='--max-time',
         nargs='?',
         type=positive_float,
-        default=0,
+        default=None,
         help="time limit (in seconds) to return solution. Either returns sub-optimal one, or none")
     args = my_parser.parse_args()
 

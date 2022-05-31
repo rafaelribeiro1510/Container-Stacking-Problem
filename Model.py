@@ -1,17 +1,19 @@
+import os
+
 from ortools.sat.python.cp_model import CpModel, CpSolver, OPTIMAL, FEASIBLE
 from docplex.cp.model import CpoModel
 from docplex.cp.solution import SOLVE_STATUS_OPTIMAL, SOLVE_STATUS_FEASIBLE
 
 class Model:
-    def __init__(self, ortools = False, cplex = False) -> None:
-        if ortools and cplex is False:
+    def __init__(self, solver : str) -> None:
+        if solver == 'ortools':
             self.ortools = CpModel()
             self.cplex = False
-        elif cplex and ortools is False:
+        elif solver == 'cplex':
             self.cplex = CpoModel()
             self.ortools = False
         else:
-            raise Exception("Model can't be of both types")
+            raise Exception("Solver not supported")
 
     # Model methods
     def Not(self, b):
@@ -76,13 +78,12 @@ class Model:
         elif self.cplex:
             self.OPTIMAL = SOLVE_STATUS_OPTIMAL
             self.FEASIBLE = SOLVE_STATUS_FEASIBLE
-            
-            if max_time > 0:
-                self.cplex.parameters.timelimit = max_time
-
-            self.solver = self.cplex.solve(execfile='/opt/ibm/ILOG/CPLEX_Studio201/cpoptimizer/bin/x86-64_linux/cpoptimizer', log_output=False)
+        
+            self.solver = self.cplex.solve(execfile='/opt/ibm/ILOG/CPLEX_Studio201/cpoptimizer/bin/x86-64_linux/cpoptimizer',
+             TimeLimit=max_time,
+             log_output=open(os.devnull,"w"))
             return {
                 "status": self.solver.get_solve_status(),
                 "time": self.solver.get_solve_time(),
-                "objective": self.solver.objective_value
+                "objective": sum(self.solver.get_objective_values())
             }
