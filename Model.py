@@ -85,5 +85,5 @@ class Model:
             return {
                 "status": self.solver.get_solve_status(),
                 "time": self.solver.get_solve_time(),
-                "objective": sum(self.solver.get_objective_values())
+                "objective": sum(self.solver.get_objective_values()) if self.solver.get_objective_values() else None
             }
