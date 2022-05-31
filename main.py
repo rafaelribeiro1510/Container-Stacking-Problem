@@ -1,4 +1,3 @@
-import timeit
 import argparse
 import json
 from inspect import getmembers, isfunction
@@ -19,6 +18,10 @@ def positive_float(x):
     if f < 0:
         raise argparse.ArgumentTypeError("%s is an invalid positive float value" % x)
     return f
+
+def print_cond(b=True, str='', **kwargs):
+    if b:
+        print(str, **kwargs)
 
 def enforce_container_lifetime_restrictions(model : Model, matrix : ContainerMatrix, labels, index_lookup, initial_container_positions, shipments, time):
     for container in labels:
@@ -141,8 +144,7 @@ def load_from_json(args : object, logs : bool = False, visualize : bool = True) 
     with open(args.path) as f:
         data = json.load(f)
         
-        if logs:
-            print("Input file loaded: '" + args.path + "'")
+        print_cond(logs, "Input file loaded: '" + args.path + "'")
 
     length, height = data["dimensions"]
     shipments = data["shipments"]
@@ -160,43 +162,34 @@ def load_from_json(args : object, logs : bool = False, visualize : bool = True) 
     labels = containers
 
     model = Model(args.solver)
-    if logs:
-        print("Generating matrix")
+    print_cond(logs, "Generating matrix")
     matrix = ContainerMatrix(model, time, len(containers), length, height)
 
-    if logs:
-        print("Implementing matrix constraints")
+    print_cond(logs, "Implementing matrix constraints")
     constraints = getmembers(Constraints, isfunction)
     for _, constraint in constraints: 
-        if logs:
-            print(_, end=" ", flush=True)
+        print_cond(logs, _, end=" ", flush=True)
         constraint(model, matrix)
-    if logs:
-        print()
+    print_cond(logs)
 
-    if logs:
-        print("Setting initial container positions")
+    print_cond(logs, "Setting initial container positions")
     for container, (label, stack, height) in enumerate(initial_container_positions):
         model.Add(matrix.get(0, container, stack, height) == 1)
     
-    if logs:
-        print("Setting initial container lifetime")
+    print_cond(logs, "Setting initial container lifetime")
     for i, container in enumerate(containers):
         if container in [i[0] for i in initial_container_positions]:
             model.Add(matrix.lifetime[0][i] == 1)
         else:
             model.Add(matrix.lifetime[0][i] == 0)
 
-    if logs:
-        print("Enforcing container lifetime restrictions")
+    print_cond(logs, "Enforcing container lifetime restrictions")
     enforce_container_lifetime_restrictions(model, matrix, labels, index_lookup, initial_container_positions, shipments, time)
 
-    if logs:
-        print("Enforcing container movement restrictions")
+    print_cond(logs, "Enforcing container movement restrictions")
     enforce_container_loading_restrictions(model, matrix, shipments)
 
-    if logs:
-        print("Enforcing weight restrictions")
+    print_cond(logs, "Enforcing weight restrictions")
     enforce_weight_restrictions(model, matrix, weights, index_lookup)
     
     minimize_ship_loading_time(model, matrix, shipments)
@@ -211,7 +204,7 @@ def load_from_json(args : object, logs : bool = False, visualize : bool = True) 
         if visualize:
             matrix.visualize(model, shipments, labels=labels)
 
-        # print(solution)
+        print(solution)
     else:
         print("No feasible solution found")
     
@@ -250,13 +243,14 @@ if __name__ == '__main__':
     args = my_parser.parse_args()
 
     if args.benchmark == 0:
-        load_from_json(args, logs=True)
+        load_from_json(args, logs=True, visualize=False)
 
     else:
+        import timeit
         print("Solver [", args.solver, "]")
         print("Number runs [", args.benchmark, "]")
 
         t = timeit.Timer(lambda: load_from_json(args, visualize=False)['status'])
-        print(t.timeit(number=args.benchmark)/args.benchmark)
+        print("Avg time (s)", t.timeit(number=args.benchmark)/args.benchmark)
         # (total_time, sol) = t.timeit(args.benchmark)
         # print("Time avg(s): ", total_time/args.benchmark)

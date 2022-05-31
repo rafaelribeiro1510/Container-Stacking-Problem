@@ -60,13 +60,13 @@ class Model:
         elif self.cplex:
             return self.solver.get_value(expr)
 
-    def Solve(self, max_time=0):
+    def Solve(self, max_time):
         if self.ortools:
             self.OPTIMAL = OPTIMAL
             self.FEASIBLE = FEASIBLE
             self.solver = CpSolver()
             
-            if max_time > 0:
+            if max_time is not None:
                 self.solver.parameters.max_time_in_seconds = max_time
             
             status = self.solver.Solve(self.ortools)
