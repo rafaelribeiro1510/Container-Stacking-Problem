@@ -245,7 +245,7 @@ if __name__ == '__main__':
         metavar='--max-time',
         nargs='?',
         type=positive_float,
-        default=0,
+        default=None,
         help="time limit (in seconds) to return solution. Either returns sub-optimal one, or none")
     args = my_parser.parse_args()
 
