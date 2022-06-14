@@ -1,5 +1,6 @@
 import argparse
 import json
+from timeit import default_timer as timer
 from inspect import getmembers, isfunction
 
 from numpy import number
@@ -162,9 +163,14 @@ def load_from_json(args : object, logs : bool = False, visualize : bool = True) 
     index_lookup = {label : index for index, label in enumerate(containers)}
     labels = containers
 
+    # Model creation phase
+    constraint_start = timer()
+
     model = Model(args.solver)
     print_cond(logs, "Generating matrix")
     matrix = ContainerMatrix(model, time, len(containers), length, height)
+
+    # Constraint application phase
 
     print_cond(logs, "Implementing matrix constraints")
     constraints = getmembers(Constraints, isfunction)
@@ -195,6 +201,9 @@ def load_from_json(args : object, logs : bool = False, visualize : bool = True) 
     
     minimize_ship_loading_time(model, matrix, shipments)
     
+    constraint_end = timer()
+    # Solve and result phas
+
     solution = model.Solve(args.time)
 
     if solution['status'] == model.OPTIMAL or solution['status'] == model.FEASIBLE:
@@ -205,7 +214,7 @@ def load_from_json(args : object, logs : bool = False, visualize : bool = True) 
         if visualize:
             matrix.visualize(model, shipments, labels=labels)
 
-        print(args.solver, solution)
+        print("Solver: ", args.solver, "Constraint Time: ", constraint_end-constraint_start, solution)
     else:
         print("No feasible solution found")
     
@@ -244,7 +253,7 @@ if __name__ == '__main__':
     args = my_parser.parse_args()
 
     if args.benchmark == 0:
-        load_from_json(args, logs=False, visualize=False)
+        load_from_json(args, logs=False, visualize=True)
 
     else:
         import timeit
