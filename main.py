@@ -205,7 +205,7 @@ def load_from_json(args : object, logs : bool = False, visualize : bool = True) 
         if visualize:
             matrix.visualize(model, shipments, labels=labels)
 
-        print(solution)
+        print(args.solver, solution)
     else:
         print("No feasible solution found")
     
@@ -244,7 +244,7 @@ if __name__ == '__main__':
     args = my_parser.parse_args()
 
     if args.benchmark == 0:
-        load_from_json(args, logs=True, visualize=False)
+        load_from_json(args, logs=False, visualize=False)
 
     else:
         import timeit

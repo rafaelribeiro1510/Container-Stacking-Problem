@@ -1,6 +1,5 @@
 import string
 from typing import Tuple, List, Union
-import pygame
 
 from Model import Model
 
@@ -241,6 +240,8 @@ class ContainerMatrix:
         print("=" * decision_spacer)
     
     def visualize(self, model : Model, shipments : List[dict], labels : Union[List[str], str] = None):
+        import pygame
+        
         if labels == None:
             labels = list(string.ascii_uppercase)[:self.c]
         pygame.init()
