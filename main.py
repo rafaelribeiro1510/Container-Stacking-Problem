@@ -249,7 +249,7 @@ if __name__ == '__main__':
         nargs='?',
         type=positive_float,
         default=None,
-        help="time limit (in seconds) to return solution. Either returns sub-optimal one, or none")
+        help="time limit (in seconds) to return solution. May return sub-optimal solution, or none at all")
 
     my_parser.add_argument('-execfile', 
         metavar='--cplex-execfile',
@@ -261,14 +261,14 @@ if __name__ == '__main__':
     args = my_parser.parse_args()
 
     if args.benchmark == 0:
-        load_from_json(args, logs=False, visualize=True)
+        load_from_json(args, logs=True, visualize=True)
 
     else:
         import timeit
         print("Solver [", args.solver, "]")
         print("Number runs [", args.benchmark, "]")
 
-        t = timeit.Timer(lambda: load_from_json(args, visualize=False)['status'])
+        t = timeit.Timer(lambda: load_from_json(args, logs=False, visualize=False)['status'])
         print("Avg time (s)", t.timeit(number=args.benchmark)/args.benchmark)
         # (total_time, sol) = t.timeit(args.benchmark)
         # print("Time avg(s): ", total_time/args.benchmark)

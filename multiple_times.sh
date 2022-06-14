@@ -7,7 +7,6 @@ test_file="inputs/constantContainers_0"
 
 for solver in "${solvers[@]}"; do
     for time in "${timestamps[@]}"; do
-        echo "-benchmark ${runs} -solver ${solver} -path ${test_file} -time ${time}"
         echo $(python3 main.py -benchmark ${runs} -solver ${solver} -path ${test_file} -time ${time}) >> results.txt
     done
 done
