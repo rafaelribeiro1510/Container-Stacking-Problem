@@ -107,7 +107,8 @@ def enforce_container_loading_restrictions(model : Model, matrix : ContainerMatr
     model.Add(sum(matrix.insert) == in_)
     model.Add(sum(matrix.remove) == out)
 
-def enforce_weight_restrictions(model : Model, matrix : ContainerMatrix, weights : dict, index_lookup : dict):
+def enforce_weight_restrictions(model : Model, matrix : ContainerMatrix, weights, index_lookup : dict):
+    weights = {label:1 for label in index_lookup} if weights == False else weights
     weight_array = [0] * len(index_lookup)
 
     for c, weight in weights.items():
@@ -149,7 +150,7 @@ def load_from_json(args : object, logs : bool = False, visualize : bool = True) 
     length, height = data["dimensions"]
     shipments = data["shipments"]
     time = sum(shipment["duration"] for shipment in shipments)
-    weights = data["weights"]
+    weights = data["weights"] if "weights" in data else False
 
     initial_container_positions = data["containers"]
 
