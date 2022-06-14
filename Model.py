@@ -60,7 +60,7 @@ class Model:
         elif self.cplex:
             return self.solver.get_value(expr)
 
-    def Solve(self, max_time):
+    def Solve(self, max_time, execfile='/opt/ibm/ILOG/CPLEX_Studio201/cpoptimizer/bin/x86-64_linux/cpoptimizer'):
         if self.ortools:
             self.OPTIMAL = OPTIMAL
             self.FEASIBLE = FEASIBLE
@@ -79,7 +79,7 @@ class Model:
             self.OPTIMAL = SOLVE_STATUS_OPTIMAL
             self.FEASIBLE = SOLVE_STATUS_FEASIBLE
         
-            self.solver = self.cplex.solve(execfile='/opt/ibm/ILOG/CPLEX_Studio201/cpoptimizer/bin/x86-64_linux/cpoptimizer',
+            self.solver = self.cplex.solve(execfile=execfile,
              TimeLimit=max_time,
              log_output=open(os.devnull,"w"))
             return {

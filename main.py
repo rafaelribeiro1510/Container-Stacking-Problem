@@ -204,7 +204,7 @@ def load_from_json(args : object, logs : bool = False, visualize : bool = True) 
     constraint_end = timer()
     # Solve and result phas
 
-    solution = model.Solve(args.time)
+    solution = model.Solve(args.time, args.execfile)
 
     if solution['status'] == model.OPTIMAL or solution['status'] == model.FEASIBLE:
         if logs:
@@ -250,6 +250,14 @@ if __name__ == '__main__':
         type=positive_float,
         default=None,
         help="time limit (in seconds) to return solution. Either returns sub-optimal one, or none")
+
+    my_parser.add_argument('-execfile', 
+        metavar='--cplex-execfile',
+        nargs = '?',
+        type=str,
+        default=None,
+        help="path for the CPLEX engine's executable. By default is '/opt/ibm/ILOG/CPLEX_Studio201/cpoptimizer/bin/x86-64_linux/cpoptimizer'"
+        )
     args = my_parser.parse_args()
 
     if args.benchmark == 0:
