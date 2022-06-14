@@ -1,0 +1,16 @@
+{
+    "containers" : [
+        ["X", 1, 0]
+    ],
+    "dimensions" : [6, 10],
+    "shipments": [
+        {
+            "duration": 1
+        },
+        {
+            "in": [],
+            "out": ["X"],
+            "duration": 11
+        }
+    ]
+}
