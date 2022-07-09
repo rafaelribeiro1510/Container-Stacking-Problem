@@ -1,10 +1,21 @@
-# Container-Stacking-Problem
+# Container Stacking Problem
+
+- **Project name:** Container Stacking Problem
+- **Short description:** Formulation of and solution to a problem of ship container loading and unloading operation
+- **Environment:** Unix
+- **Tools:** Python, , OR-Tools, DOcplex
+- **Institution:** [FEUP](https://sigarra.up.pt/feup/en/web_page.Inicial)
+- **Course:** [CLP](https://sigarra.up.pt/feup/en/ucurr_geral.ficha_uc_view?pv_ocorrencia_id=486262) (Constraint Logic Programming)
+- **Project grade:** ?/20
+- **Group members:**
+    - [Daniel Monteiro](https://github.com/dfamonteiro) (<up201806330@fe.up.pt>)
+    - [Rafael Soares Ribeiro](https://github.com/up201806330) (<up201806330@fe.up.pt>)
 
 ## Instalation
 ### Python packages
 `pip3 install cplex docplex ortools`
 
-### A note on CPLEX
+### CPLEX
 An instalation of CPLEX Studio must also be present. Our version is configured with Ubuntu's default installation location '/opt/ibm/ILOG/CPLEX_Studio201/cpoptimizer/bin/x86-64_linux/cpoptimizer'. 
 Override this path with the cli argument '-execfile'
 
