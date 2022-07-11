@@ -6,7 +6,7 @@
 - **Tools:** Python, , OR-Tools, DOcplex
 - **Institution:** [FEUP](https://sigarra.up.pt/feup/en/web_page.Inicial)
 - **Course:** [CLP](https://sigarra.up.pt/feup/en/ucurr_geral.ficha_uc_view?pv_ocorrencia_id=486262) (Constraint Logic Programming)
-- **Project grade:** ?/20
+- **Project grade:** 17.1/20
 - **Group members:**
     - [Daniel Monteiro](https://github.com/dfamonteiro) (<up201806185@edu.fe.up.pt>)
     - [Rafael Soares Ribeiro](https://github.com/up201806330) (<up201806330@fe.up.pt>)
